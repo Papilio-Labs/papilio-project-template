@@ -1,13 +1,13 @@
 //===========================================================================
 // Papilio RetroCade Pin Constraints
-// Board: GW5A-25A FPGA (QFN88 package)
+// Board: GW2A-LV18PG256C8/I7 FPGA (PG256 package)
 //===========================================================================
 
 //===========================================================================
 // Clock and Reset
 //===========================================================================
-// Clock from ESP32 GPIO1 (27MHz)
-IO_LOC "clk" A9;
+// Clock from ESP32 (27MHz)
+IO_LOC "clk" H11;
 IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // Reset from ESP32 GPIO2 (active low)
@@ -18,7 +18,7 @@ IO_PORT "rst_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 // SPI Interface (ESP32 to FPGA Communication)
 //===========================================================================
 // SPI Clock from ESP32 GPIO12
-IO_LOC "spi_sclk" B12;
+IO_LOC "spi_sclk" A11;
 IO_PORT "spi_sclk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // SPI MOSI from ESP32 GPIO11
@@ -26,11 +26,11 @@ IO_LOC "spi_mosi" B11;
 IO_PORT "spi_mosi" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // SPI MISO to ESP32 GPIO13
-IO_LOC "spi_miso" C12;
+IO_LOC "spi_miso" B10;
 IO_PORT "spi_miso" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // SPI CS from ESP32 GPIO10
-IO_LOC "spi_cs_n" A10;
+IO_LOC "spi_cs_n" A12;
 IO_PORT "spi_cs_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 //===========================================================================

@@ -37,3 +37,4 @@ fpga/*.rpt
 # Credentials
 secrets.h
 credentials.h
+fpga/build_script.tcl

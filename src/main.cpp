@@ -1,50 +1,22 @@
 /**
- * Papilio RetroCade Template Project
+ * Papilio RetroCade - Simple GPIO Pass-through Example
+ * ESP32-S3 + FPGA
  * 
- * This template demonstrates:
- * - ESP32-S3 to FPGA communication via Wishbone SPI
- * - RGB LED control using WS2812B protocol
- * - Basic initialization and color cycling
+ * Simple test: ESP32 toggles GPIO1, FPGA passes it through to all PMOD pins.
  * 
  * Hardware:
- * - ESP32-S3 microcontroller
- * - Gowin GW5A-25A FPGA
- * - WS2812B RGB LED
+ * - ESP32-S3 SuperMini
+ * - Gowin GW2A-18 FPGA (Papilio RetroCade)
  * 
- * Libraries:
- * - papilio_wishbone_spi_master: SPI-to-Wishbone bridge
- * - papilio_wishbone_rgb_led: RGB LED controller
+ * Connections:
+ * - ESP32 GPIO 1 -> FPGA gpio1_in (A9)
+ * - FPGA drives all 8 PMOD pins with the same signal
  */
 
 #include <Arduino.h>
-#include <SPI.h>
-#include "WishboneSPI.h"
-#include "RGBLed.h"
 
-// SPI pin definitions for Papilio RetroCade
-// ESP32-S3 to FPGA SPI connection
-#define SPI_CLK   12  // GPIO12 -> FPGA pin B12
-#define SPI_MOSI  11  // GPIO11 -> FPGA pin B11
-#define SPI_MISO  13  // GPIO13 -> FPGA pin C12
-#define SPI_CS    10  // GPIO10 -> FPGA pin A9
-
-// SPI interface handle
-SPIClass *fpgaSPI = nullptr;
-
-// Color cycle array
-const uint32_t colors[] = {
-    RGBLed::COLOR_RED,
-    RGBLed::COLOR_GREEN,
-    RGBLed::COLOR_BLUE,
-    RGBLed::COLOR_YELLOW,
-    RGBLed::COLOR_CYAN,
-    RGBLed::COLOR_MAGENTA,
-    RGBLed::COLOR_WHITE,
-    RGBLed::COLOR_ORANGE,
-    RGBLed::COLOR_PURPLE
-};
-const int numColors = sizeof(colors) / sizeof(colors[0]);
-int currentColorIndex = 0;
+// Pin definitions
+#define GPIO1_PIN 1    // GPIO pin connected to FPGA (maps to A9 - ESP32_GPIO1)
 
 void setup() {
     // Initialize serial for debugging
@@ -52,63 +24,35 @@ void setup() {
     delay(1000);
     
     Serial.println("\n\n");
-    Serial.println("====================================");
-    Serial.println("  Papilio RetroCade Template");
-    Serial.println("  ESP32-S3 + Gowin FPGA");
-    Serial.println("====================================");
+    Serial.println("===========================================");
+    Serial.println("  Papilio RetroCade - GPIO Pass-through");
+    Serial.println("===========================================");
+    Serial.println();
+    Serial.println("ESP32 will toggle GPIO1 to control PMOD pins");
+    Serial.print("Using GPIO ");
+    Serial.println(GPIO1_PIN);
     Serial.println();
     
-    // Initialize SPI for FPGA communication
-    Serial.println("Initializing SPI...");
-    fpgaSPI = new SPIClass(HSPI);
-    fpgaSPI->begin(SPI_CLK, SPI_MISO, SPI_MOSI, SPI_CS);
+    // Configure GPIO1 as output
+    pinMode(GPIO1_PIN, OUTPUT);
+    digitalWrite(GPIO1_PIN, LOW);
     
-    pinMode(SPI_CS, OUTPUT);
-    digitalWrite(SPI_CS, HIGH);
-    
-    Serial.println("  SPI initialized");
-    Serial.printf("  CS:   GPIO%d\n", SPI_CS);
-    Serial.printf("  CLK:  GPIO%d\n", SPI_CLK);
-    Serial.printf("  MOSI: GPIO%d\n", SPI_MOSI);
-    Serial.printf("  MISO: GPIO%d\n", SPI_MISO);
-    Serial.println();
-    
-    // Initialize RGB LED library
-    Serial.println("Initializing RGB LED...");
-    RGBLed::begin(fpgaSPI, SPI_CS);
-    Serial.println("  RGB LED initialized");
-    Serial.println();
-    
-    // Set initial color
-    Serial.println("Setting initial color: RED");
-    RGBLed::setColor(RGBLed::COLOR_RED);
-    
-    Serial.println();
-    Serial.println("Setup complete!");
-    Serial.println("LED will cycle through colors every 2 seconds");
-    Serial.println();
+    Serial.println("Setup complete - starting toggle loop\n");
 }
 
 void loop() {
-    static unsigned long lastChange = 0;
+    static unsigned long lastToggle = 0;
+    static bool toggleState = false;
     
-    // Change color every 2 seconds
-    if (millis() - lastChange > 2000) {
-        // Move to next color
-        currentColorIndex = (currentColorIndex + 1) % numColors;
+    // Toggle pin every second
+    if (millis() - lastToggle > 1000) {
+        toggleState = !toggleState;
+        digitalWrite(GPIO1_PIN, toggleState ? HIGH : LOW);
         
-        // Set the new color
-        RGBLed::setColor(colors[currentColorIndex]);
+        Serial.print("GPIO1: ");
+        Serial.println(toggleState ? "HIGH" : "LOW");
         
-        // Print color name
-        const char* colorNames[] = {
-            "RED", "GREEN", "BLUE", "YELLOW",
-            "CYAN", "MAGENTA", "WHITE", "ORANGE", "PURPLE"
-        };
-        Serial.print("Color: ");
-        Serial.println(colorNames[currentColorIndex]);
-        
-        lastChange = millis();
+        lastToggle = millis();
     }
     
     delay(10);

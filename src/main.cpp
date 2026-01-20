@@ -61,7 +61,7 @@ void setup() {
 
 void loop() {
     // Process Papilio OS (handles CLI commands)
-    PapilioOS.loop();
+    PapilioOS.handle();
     
     // Status update every second
     if (millis() - lastPrint > 1000) {

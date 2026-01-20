@@ -23,6 +23,7 @@
 //# PAPILIO_AUTO_INCLUDES_END
 
 #include <Arduino.h>
+#include <PapilioOS.h>
 
 //# PAPILIO_AUTO_GLOBALS_BEGIN
 // Auto-generated global objects
@@ -52,10 +53,16 @@ void setup() {
     // Peripheral initialization will appear here when you add Papilio libraries to lib_deps
     //# PAPILIO_AUTO_INIT_END
     
+    // Initialize Papilio OS (CLI framework)
+    PapilioOS.begin();
+    
     Serial.println("Setup complete!\n");
 }
 
 void loop() {
+    // Process Papilio OS (handles CLI commands)
+    PapilioOS.loop();
+    
     // Status update every second
     if (millis() - lastPrint > 1000) {
         lastPrint = millis();

@@ -1,22 +1,36 @@
 /**
- * Papilio RetroCade - Simple GPIO Pass-through Example
+ * Papilio RetroCade - Wishbone Auto-Builder Template
  * ESP32-S3 + FPGA
  * 
- * Simple test: ESP32 toggles GPIO1, FPGA passes it through to all PMOD pins.
+ * This template is ready for the Papilio Automatic Library Builder.
+ * Add Papilio Wishbone libraries to platformio.ini lib_deps and they will be
+ * automatically integrated into this firmware.
+ * 
+ * The PAPILIO_AUTO_* marker regions are auto-generated - do not edit them manually.
+ * Your custom code outside the markers will be preserved.
  * 
  * Hardware:
  * - ESP32-S3 SuperMini
  * - Gowin GW2A-18 FPGA (Papilio RetroCade)
  * 
- * Connections:
- * - ESP32 GPIO 1 -> FPGA gpio1_in (A9)
- * - FPGA drives all 8 PMOD pins with the same signal
+ * Communication:
+ * - SPI interface provides Wishbone bus access to FPGA peripherals
  */
+
+//# PAPILIO_AUTO_INCLUDES_BEGIN
+// Auto-generated library includes
+// Library headers will appear here when you add Papilio libraries to lib_deps
+//# PAPILIO_AUTO_INCLUDES_END
 
 #include <Arduino.h>
 
-// Pin definitions
-#define GPIO1_PIN 1    // GPIO pin connected to FPGA (maps to A9 - ESP32_GPIO1)
+//# PAPILIO_AUTO_GLOBALS_BEGIN
+// Auto-generated global objects
+// Peripheral instances will be declared here when you add Papilio libraries to lib_deps
+//# PAPILIO_AUTO_GLOBALS_END
+
+// Your global variables go here
+unsigned long lastPrint = 0;
 
 void setup() {
     // Initialize serial for debugging
@@ -25,35 +39,35 @@ void setup() {
     
     Serial.println("\n\n");
     Serial.println("===========================================");
-    Serial.println("  Papilio RetroCade - GPIO Pass-through");
+    Serial.println("  Papilio RetroCade - Wishbone System");
     Serial.println("===========================================");
     Serial.println();
-    Serial.println("ESP32 will toggle GPIO1 to control PMOD pins");
-    Serial.print("Using GPIO ");
-    Serial.println(GPIO1_PIN);
+    Serial.println("Ready to add Papilio Wishbone libraries!");
+    Serial.println("Add libraries to platformio.ini lib_deps");
+    Serial.println("and they will be auto-integrated.");
     Serial.println();
     
-    // Configure GPIO1 as output
-    pinMode(GPIO1_PIN, OUTPUT);
-    digitalWrite(GPIO1_PIN, LOW);
+    //# PAPILIO_AUTO_INIT_BEGIN
+    // Auto-generated initialization code
+    // Peripheral initialization will appear here when you add Papilio libraries to lib_deps
+    //# PAPILIO_AUTO_INIT_END
     
-    Serial.println("Setup complete - starting toggle loop\n");
+    Serial.println("Setup complete!\n");
 }
 
 void loop() {
-    static unsigned long lastToggle = 0;
-    static bool toggleState = false;
-    
-    // Toggle pin every second
-    if (millis() - lastToggle > 1000) {
-        toggleState = !toggleState;
-        digitalWrite(GPIO1_PIN, toggleState ? HIGH : LOW);
-        
-        Serial.print("GPIO1: ");
-        Serial.println(toggleState ? "HIGH" : "LOW");
-        
-        lastToggle = millis();
+    // Status update every second
+    if (millis() - lastPrint > 1000) {
+        lastPrint = millis();
+        Serial.print("Running... [");
+        Serial.print(millis() / 1000);
+        Serial.println("s]");
     }
+    
+    //# PAPILIO_AUTO_CLI_BEGIN
+    // Auto-generated CLI dispatcher
+    // CLI command handling will appear here when you add libraries with CLI support
+    //# PAPILIO_AUTO_CLI_END
     
     delay(10);
 }

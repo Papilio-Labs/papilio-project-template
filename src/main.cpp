@@ -63,8 +63,8 @@ void loop() {
     // Process Papilio OS (handles CLI commands)
     PapilioOS.handle();
     
-    // Status update every second
-    if (millis() - lastPrint > 1000) {
+    // Status update every second (only when not in CLI mode)
+    if (!PapilioOS.isInCLIMode() && millis() - lastPrint > 1000) {
         lastPrint = millis();
         Serial.print("Running... [");
         Serial.print(millis() / 1000);

@@ -12,7 +12,6 @@
 
 module top (
     input  wire clk_27mhz,      // 27 MHz system clock
-    input  wire rst_n,          // Active-low reset
     
     // SPI Interface (ESP32 communication via Wishbone bridge)
     input  wire spi_sclk,
@@ -27,10 +26,22 @@ module top (
 );
 
     // =========================================================================
-    // Clock and Reset
+    // Clock and Reset Generation
     // =========================================================================
     wire clk = clk_27mhz;
-    wire rst = ~rst_n;
+    
+    // Reset generator - holds reset high for 16 clock cycles on startup
+    reg [3:0] reset_counter = 4'b0000;
+    reg rst = 1'b1;
+    
+    always @(posedge clk) begin
+        if (reset_counter != 4'b1111) begin
+            reset_counter <= reset_counter + 1;
+            rst <= 1'b1;
+        end else begin
+            rst <= 1'b0;
+        end
+    end
     
     // =========================================================================
     // Wishbone Bus Signals

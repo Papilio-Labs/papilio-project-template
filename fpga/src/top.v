@@ -1,84 +1,69 @@
 /**
- * Papilio RetroCade - Wishbone Auto-Builder Template
+ * Papilio RetroCade - Wishbone System Template
  * ESP32-S3 + Gowin FPGA
- * 
- * This template is ready for the Papilio Automatic Library Builder.
- * Add Papilio Wishbone libraries to platformio.ini lib_deps and they will be
- * automatically integrated into this design.
- * 
- * The PAPILIO_AUTO_* marker regions are auto-generated - do not edit them manually.
- * Your custom code outside the markers will be preserved.
+ *
+ * Getting started:
+ *   1. Set NUM_SLOTS to the number of peripheral slots you need (1-32)
+ *   2. Add SLOT_CONNECT lines for each peripheral
+ *   3. Wire any extra I/O (e.g., LED outputs) after the macro call
+ *   4. Add board-specific ports to the module declaration
+ *   5. Build and upload!
+ *
+ * Slot Address Map:
+ *   Slot 0: 0x0000-0x00FF  (system reserved)
+ *   Slot 1: 0x0100-0x01FF
+ *   Slot 2: 0x0200-0x02FF
+ *   ...
+ *   Slot N: 0x(N*0x100)-0x(N*0x100+0xFF)
  */
 
 module top (
     input  wire clk_27mhz,      // 27 MHz system clock
-    
+
     // SPI Interface (ESP32 communication via Wishbone bridge)
     input  wire spi_sclk,
     input  wire spi_mosi,
     output wire spi_miso,
     input  wire spi_cs_n
-    
-    //# PAPILIO_AUTO_PORTS_BEGIN
-    // Auto-generated port declarations
-    // Peripheral I/O ports will appear here when libraries are added
-    //# PAPILIO_AUTO_PORTS_END
+
+    // Add your board I/O ports here, for example:
+    // output wire [2:0] rgb_led
 );
 
     // =========================================================================
-    // Clock and Reset Generation
+    // Bus Infrastructure (reset, SPI bridge, interconnect — all inside)
     // =========================================================================
     wire clk = clk_27mhz;
-    
-    // Reset generator - holds reset high for 16 clock cycles on startup
-    reg [3:0] reset_counter = 4'b0000;
-    reg rst = 1'b1;
-    
-    always @(posedge clk) begin
-        if (reset_counter != 4'b1111) begin
-            reset_counter <= reset_counter + 1;
-            rst <= 1'b1;
-        end else begin
-            rst <= 1'b0;
-        end
-    end
-    
+    localparam NUM_SLOTS = 8;
+    wire rst;                      // Driven by pwb_wb_system.rst_o
+    `include "pwb_bus_wires.vh"
+
+    pwb_wb_system #(.NUM_SLOTS(NUM_SLOTS)) bus (
+        .clk(clk),
+        .rst_o(rst),
+        .spi_sclk(spi_sclk),
+        .spi_mosi(spi_mosi),
+        .spi_miso(spi_miso),
+        .spi_cs_n(spi_cs_n),
+        `PWB_SLOT_PORTS
+    );
+
     // =========================================================================
-    // Wishbone Bus Signals
+    // Peripheral Slot Assignments
     // =========================================================================
-    wire [15:0] wb_adr;        // 16-bit address bus
-    wire [31:0] wb_dat_m2s;    // Data from master to slave
-    wire [31:0] wb_dat_s2m;    // Data from slave to master
-    wire        wb_we;         // Write enable
-    wire        wb_cyc;        // Bus cycle active
-    wire        wb_stb;        // Strobe (valid transfer)
-    wire        wb_ack;        // Acknowledge
-    
-    //# PAPILIO_AUTO_WIRES_BEGIN
-    // Auto-generated wire declarations
-    // Module interconnect wires will appear here when libraries are added
-    //# PAPILIO_AUTO_WIRES_END
-    
-    // =========================================================================
-    // Module Instantiations
-    // =========================================================================
-    //# PAPILIO_AUTO_MODULE_INST_BEGIN
-    // Auto-generated module instantiations
-    // Peripheral modules will be instantiated here when libraries are added
-    //# PAPILIO_AUTO_MODULE_INST_END
-    
-    // =========================================================================
-    // Wishbone Interconnect
-    // =========================================================================
-    //# PAPILIO_AUTO_WISHBONE_BEGIN
-    // Auto-generated Wishbone interconnect logic
-    // Address decoding and bus arbitration will appear here when libraries are added
-    //# PAPILIO_AUTO_WISHBONE_END
-    
+    // Each SLOT_CONNECT line wires a peripheral to one slot.
+    // To swap a peripheral: change the module name. To add more: increase NUM_SLOTS.
+
+    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_sys);
+
+    // Add your peripherals below:
+    // `SLOT_CONNECT(1, wb_rgb_led,        slot1_rgb);
+    // `SLOT_CONNECT(2, wb_register_block #(.DATA_WIDTH(16)), slot2_regs);
+
     // =========================================================================
     // User Logic
     // =========================================================================
-    // Add your custom logic here - it will be preserved during auto-generation
-    // Example: Connect peripheral outputs to top-level ports, add custom modules, etc.
+    // Wire extra I/O for peripherals that have external pins:
+    // assign rgb_led = <output from slot1_rgb>;
 
 endmodule

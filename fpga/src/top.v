@@ -46,6 +46,8 @@ module top (
         .spi_miso(spi_miso),
         .spi_cs_n(spi_cs_n),
         `PWB_SLOT_PORTS
+        // Uncomment the next line to enable the extended tier (0x2000-0xFFFF):
+        // ,`PWB_EXT_PORTS
     );
 
     // =========================================================================
@@ -59,6 +61,12 @@ module top (
     // Add your peripherals below:
     // `SLOT_CONNECT(1, wb_rgb_led,        slot1_rgb);
     // `SLOT_CONNECT(2, wb_register_block #(.DATA_WIDTH(16)), slot2_regs);
+
+    // =========================================================================
+    // Extended Tier Peripheral (0x2000-0xFFFF)
+    // =========================================================================
+    // Uncomment to add a BRAM or other large peripheral on the extended tier:
+    // `EXT_CONNECT(wb_bram #(.ADDR_WIDTH(10), .DATA_WIDTH(32)), ext_bram);
 
     // =========================================================================
     // User Logic

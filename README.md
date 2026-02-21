@@ -295,12 +295,16 @@ module top (
         // ,`PWB_EXT_PORTS   // Uncomment to enable extended tier (0x2000+)
     );
 
-    // Wire peripherals to slots
-    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_reg);
-    // `SLOT_CONNECT(1, wb_rgb_led, slot1_led);  // Example: add an RGB LED
+    // Wire peripherals to slots (close each with );  )
+    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_reg));
+
+    // Peripheral with extra I/O — add ports before closing );
+    // `SLOT_CONNECT(1, wb_simple_rgb_led, slot1_led),
+    //     .led_out(rgb_led)
+    // );
 
     // Extended tier (BRAM) — uncomment with PWB_EXT_PORTS above
-    // `EXT_CONNECT(wb_bram #(.ADDR_WIDTH(10), .DATA_WIDTH(32)), ext_bram);
+    // `EXT_CONNECT(wb_bram #(.ADDR_WIDTH(10), .DATA_WIDTH(32)), ext_bram));
 
 endmodule
 ```

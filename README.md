@@ -110,17 +110,16 @@ Visit [Papilio Labs GitHub](https://github.com/Papilio-Labs) for the latest libr
 
 ## Address Map
 
-The auto-builder allocates Wishbone addresses automatically:
+Addresses are allocated by the slot tier of the Wishbone interconnect:
 
-| Address Range | Size | Typical Use |
-|---------------|------|-------------|
-| 0x0000-0x0FFF | 4KB | SPI Bridge (auto-assigned first) |
-| 0x1000-0x1FFF | 4KB | Peripheral slot 1 |
-| 0x2000-0x2FFF | 4KB | Peripheral slot 2 |
-| 0x3000-0x3FFF | 4KB | Peripheral slot 3 |
-| ... | | More slots as needed |
-
-Addresses are allocated in 4KB (0x1000) increments by default.
+| Address Range       | Size     | Content                          |
+|---------------------|----------|----------------------------------|
+| `0x0000–0x00FF`     | 256 B    | Slot 0 (system reserved)         |
+| `0x0100–0x01FF`     | 256 B    | Slot 1                           |
+| `0x0200–0x02FF`     | 256 B    | Slot 2                           |
+| …                   | …        | …                                |
+| `0xNN×0x100–0xNN×0x100+0xFF` | 256 B | Slot N (up to 32 slots) |
+| `0x2000–0xFFFF`     | 56 KB    | Extended tier (BRAM, on-chip mem) |
 
 ## Customization
 
@@ -269,6 +268,50 @@ uint32_t value = wbRegister.read(0);
 // Write register 1
 wbRegister.write(1, 0x12345678);
 ```
+
+### Example 3: Simplified `top.v` with Wishbone system
+
+The template uses `pwb_wb_system` + `pwb_bus_wires.vh` to wire the bus in ~30 lines:
+
+```verilog
+module top (
+    input  wire clk_27mhz,
+    input  wire spi_sclk,
+    input  wire spi_mosi,
+    output wire spi_miso,
+    input  wire spi_cs_n
+    // Add board I/O here (e.g., output wire [2:0] rgb_led)
+);
+    wire clk = clk_27mhz;
+    localparam NUM_SLOTS = 8;
+    wire rst;
+    `include "pwb_bus_wires.vh"
+
+    pwb_wb_system #(.NUM_SLOTS(NUM_SLOTS)) bus (
+        .clk(clk), .rst_o(rst),
+        .spi_sclk(spi_sclk), .spi_mosi(spi_mosi),
+        .spi_miso(spi_miso), .spi_cs_n(spi_cs_n),
+        `PWB_SLOT_PORTS
+        // ,`PWB_EXT_PORTS   // Uncomment to enable extended tier (0x2000+)
+    );
+
+    // Wire peripherals to slots (close each with );  )
+    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_reg));
+
+    // Peripheral with extra I/O — add ports before closing );
+    // `SLOT_CONNECT(1, wb_simple_rgb_led, slot1_led),
+    //     .led_out(rgb_led)
+    // );
+
+    // Extended tier (BRAM) — uncomment with PWB_EXT_PORTS above
+    // `EXT_CONNECT(wb_bram #(.ADDR_WIDTH(10), .DATA_WIDTH(32)), ext_bram));
+
+endmodule
+```
+
+**Slot address map** (each slot = 256 bytes, `addr[12:8]` = slot number):
+- Slot 0: `0x0000–0x00FF`, Slot 1: `0x0100–0x01FF`, Slot N: `N×0x100`
+- Extended tier: `0x2000–0xFFFF`
 
 ## Learn More
 

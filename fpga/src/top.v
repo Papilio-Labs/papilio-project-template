@@ -1,84 +1,92 @@
 /**
- * Papilio RetroCade - Wishbone Auto-Builder Template
+ * Papilio RetroCade - Wishbone System Template
  * ESP32-S3 + Gowin FPGA
- * 
- * This template is ready for the Papilio Automatic Library Builder.
- * Add Papilio Wishbone libraries to platformio.ini lib_deps and they will be
- * automatically integrated into this design.
- * 
- * The PAPILIO_AUTO_* marker regions are auto-generated - do not edit them manually.
- * Your custom code outside the markers will be preserved.
+ *
+ * Getting started:
+ *   1. Set NUM_SLOTS to the number of peripheral slots you need (1-32)
+ *   2. Add SLOT_CONNECT lines for each peripheral
+ *   3. Wire any extra I/O (e.g., LED outputs) after the macro call
+ *   4. Add board-specific ports to the module declaration
+ *   5. Build and upload!
+ *
+ * Slot Address Map:
+ *   Slot 0: 0x0000-0x00FF  (system reserved)
+ *   Slot 1: 0x0100-0x01FF
+ *   Slot 2: 0x0200-0x02FF
+ *   ...
+ *   Slot N: 0x(N*0x100)-0x(N*0x100+0xFF)
  */
 
 module top (
     input  wire clk_27mhz,      // 27 MHz system clock
-    
+
     // SPI Interface (ESP32 communication via Wishbone bridge)
     input  wire spi_sclk,
     input  wire spi_mosi,
     output wire spi_miso,
     input  wire spi_cs_n
-    
-    //# PAPILIO_AUTO_PORTS_BEGIN
-    // Auto-generated port declarations
-    // Peripheral I/O ports will appear here when libraries are added
-    //# PAPILIO_AUTO_PORTS_END
+
+    // Add your board I/O ports here, for example:
+    // output wire [2:0] rgb_led
 );
 
     // =========================================================================
-    // Clock and Reset Generation
+    // Bus Infrastructure (reset, SPI bridge, interconnect — all inside)
     // =========================================================================
     wire clk = clk_27mhz;
-    
-    // Reset generator - holds reset high for 16 clock cycles on startup
-    reg [3:0] reset_counter = 4'b0000;
-    reg rst = 1'b1;
-    
-    always @(posedge clk) begin
-        if (reset_counter != 4'b1111) begin
-            reset_counter <= reset_counter + 1;
-            rst <= 1'b1;
-        end else begin
-            rst <= 1'b0;
-        end
-    end
-    
+    localparam NUM_SLOTS = 8;
+    wire rst;                      // Driven by pwb_wb_system.rst_o
+    `include "pwb_bus_wires.vh"
+
+    pwb_wb_system #(.NUM_SLOTS(NUM_SLOTS)) bus (
+        .clk(clk),
+        .rst_o(rst),
+        .spi_sclk(spi_sclk),
+        .spi_mosi(spi_mosi),
+        .spi_miso(spi_miso),
+        .spi_cs_n(spi_cs_n),
+        `PWB_SLOT_PORTS
+        // Uncomment the next line to enable the extended tier (0x2000-0xFFFF):
+        // ,`PWB_EXT_PORTS
+    );
+
     // =========================================================================
-    // Wishbone Bus Signals
+    // Peripheral Slot Assignments
     // =========================================================================
-    wire [15:0] wb_adr;        // 16-bit address bus
-    wire [31:0] wb_dat_m2s;    // Data from master to slave
-    wire [31:0] wb_dat_s2m;    // Data from slave to master
-    wire        wb_we;         // Write enable
-    wire        wb_cyc;        // Bus cycle active
-    wire        wb_stb;        // Strobe (valid transfer)
-    wire        wb_ack;        // Acknowledge
-    
-    //# PAPILIO_AUTO_WIRES_BEGIN
-    // Auto-generated wire declarations
-    // Module interconnect wires will appear here when libraries are added
-    //# PAPILIO_AUTO_WIRES_END
-    
+    // Each SLOT_CONNECT wires clk, rst, and all 8 Wishbone signals.
+    // The macro leaves the port list open — close with );
+    // For extra I/O: add a comma and extra ports before );
+    //
+    // Simple:    `SLOT_CONNECT(0, wb_register_block #(.DATA_WIDTH(8)), slot0_sys));
+    // Extra I/O: `SLOT_CONNECT(1, wb_simple_rgb_led, slot1_rgb),
+    //                .led_out(rgb_led)
+    //            );
+
+    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_sys));
+
+    // Add your peripherals below:
+    // `SLOT_CONNECT(1, wb_simple_rgb_led, slot1_rgb),
+    //     .led_out(rgb_led)
+    // );
+    // `SLOT_CONNECT(2, wb_register_block #(.DATA_WIDTH(16)), slot2_regs));
+
     // =========================================================================
-    // Module Instantiations
+    // Extended Tier Peripheral (0x2000-0xFFFF)
     // =========================================================================
-    //# PAPILIO_AUTO_MODULE_INST_BEGIN
-    // Auto-generated module instantiations
-    // Peripheral modules will be instantiated here when libraries are added
-    //# PAPILIO_AUTO_MODULE_INST_END
-    
-    // =========================================================================
-    // Wishbone Interconnect
-    // =========================================================================
-    //# PAPILIO_AUTO_WISHBONE_BEGIN
-    // Auto-generated Wishbone interconnect logic
-    // Address decoding and bus arbitration will appear here when libraries are added
-    //# PAPILIO_AUTO_WISHBONE_END
-    
-    // =========================================================================
-    // User Logic
-    // =========================================================================
-    // Add your custom logic here - it will be preserved during auto-generation
-    // Example: Connect peripheral outputs to top-level ports, add custom modules, etc.
+    // Option A: Single peripheral on the extended tier (simple, no router):
+    //   Uncomment ,`PWB_EXT_PORTS in pwb_wb_system above, then:
+    //   `EXT_CONNECT(wb_bram #(.ADDR_WIDTH(10), .DATA_WIDTH(32)), ext_bram));
+    //
+    // Option B: Multiple peripherals on the extended tier (router auto-instantiated):
+    //   Add BEFORE the `include "pwb_bus_wires.vh" line:
+    //     `define    NUM_EXT_SLOTS
+    //     localparam NUM_EXT_SLOTS = 2;
+    //     localparam [NUM_EXT_SLOTS*16-1:0] EXT_BASE_ADDRS = {16'hB000, 16'h2000};
+    //     localparam [NUM_EXT_SLOTS*16-1:0] EXT_SIZES      = {16'h1000, 16'h9000};
+    //   Keep ,`PWB_EXT_PORTS in pwb_wb_system (unchanged), then:
+    //   `EXT_SLOT_CONNECT(0, my_hdmi_wb #(.BASE_ADDR(16'h2000)), u_hdmi),
+    //       .O_tmds_clk_p(O_tmds_clk_p)
+    //   );
+    //   `EXT_SLOT_CONNECT(1, wb_bram #(.ADDR_WIDTH(10)), u_bram));
 
 endmodule

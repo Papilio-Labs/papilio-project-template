@@ -78,5 +78,4 @@ The optional extended tier spans `0x2000` to `0xFFFF`. See
 [top.v](./fpga/src/top.v) for single- and multi-peripheral wiring examples.
 
 If libraries provide duplicate HDL modules, exclude the unwanted file with
-`board_build.fpga_exclude_sources`. The starter configuration already does this
-for the legacy SPI bridge shared by two core libraries.
+`board_build.fpga_exclude_sources`.

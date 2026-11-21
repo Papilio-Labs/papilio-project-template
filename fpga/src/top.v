@@ -27,7 +27,7 @@ module top (
     input  wire spi_cs_n
 
     // Add your board I/O ports here, for example:
-    // output wire [2:0] rgb_led
+    // , output wire rgb_led
 );
 
     // =========================================================================
@@ -62,7 +62,8 @@ module top (
     //                .led_out(rgb_led)
     //            );
 
-    `SLOT_CONNECT(0, wb_register_block #(.ADDR_WIDTH(4), .DATA_WIDTH(8)), slot0_sys));
+    // Slot 0 is reserved for system control; this register block is a placeholder.
+    `SLOT_CONNECT(0, wb_register_block, slot0_sys));
 
     // Add your peripherals below:
     // `SLOT_CONNECT(1, wb_simple_rgb_led, slot1_rgb),

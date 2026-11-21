@@ -43,13 +43,13 @@ Then run `pio run` for both targets, or `pio run -e fpga` and
    IO_PORT "rgb_led" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
    ```
 
-4. In [main.cpp](./src/main.cpp), add the driver and instantiate it at slot
-   1's base address:
+4. In [main.cpp](./src/main.cpp), add the driver and pass it the same slot
+   number used in `SLOT_CONNECT`:
 
    ```cpp
    #include <PapilioRGBLed.h>
 
-   PapilioRGBLed rgbLed(0x0100);
+   auto rgbLed = PapilioRGBLed::fromSlot(1);
    ```
 
    In `setup()`, after `wishboneInit(...)`, add:
@@ -72,7 +72,8 @@ Each standard slot occupies 256 bytes, so its base address is `slot * 0x100`.
 Slot 0 (`0x0000`) is reserved for system control; the starter design uses a
 placeholder register block there, not a device directory. Slot 1 starts at
 `0x0100`, slot 2 at `0x0200`, and so on. Give each peripheral a distinct slot
-and use the corresponding base address in its ESP32 driver.
+and pass that same slot number to drivers that provide `fromSlot()`. For a
+driver that only takes a byte address, use the corresponding base address.
 
 The optional extended tier spans `0x2000` to `0xFFFF`. See
 [top.v](./fpga/src/top.v) for single- and multi-peripheral wiring examples.

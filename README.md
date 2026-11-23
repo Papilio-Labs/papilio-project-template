@@ -70,6 +70,32 @@ factory/OTA partition layout. Normal uploads do not install or replace that
 loader. No desktop Papilio Loader, MCP, Node.js, or globally installed
 flashing tools are required.
 
+### Release and package upgrades
+
+Template **v0.1.0** pins the FPGA platform and ESP uploader to platform
+**v1.2.0** (uploader package **0.2.0**). These are GitHub releases; no
+PlatformIO registry publication is required.
+
+To start from this release:
+
+```bash
+git clone --branch v0.1.0 https://github.com/Papilio-Labs/papilio-project-template.git
+```
+
+Existing projects should merge the upload hook, partition CSV, and ESP upload
+settings from this template without overwriting their application/gateware.
+Set both the FPGA `platform` URL and ESP `tool-papilio-upload` Git URL to
+`https://github.com/Papilio-Labs/platform-gowin.git#v1.2.0`, then run
+`pio pkg install` and rebuild. Changing both references together keeps the
+shared uploader consistent. To refresh an intentionally unpinned Git
+dependency, use `pio pkg update`; pinned dependencies stay on their tag
+until you explicitly change it.
+
+See the platform's
+[migration instructions](https://github.com/Papilio-Labs/platform-gowin/tree/v1.2.0#versioned-installs-and-upgrading-existing-projects).
+An older board still requires explicit compatible-loader provisioning;
+ordinary uploads do not change its partition table or factory firmware.
+
 ### USB serial (default)
 
 ```bash

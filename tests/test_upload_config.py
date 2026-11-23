@@ -14,7 +14,10 @@ class UploadConfigTests(unittest.TestCase):
         ]
         uploader = next(spec for spec in specs if spec.name == "tool-papilio-upload")
         self.assertEqual(
-            uploader.uri, "git+https://github.com/Papilio-Labs/platform-gowin.git"
+            uploader.uri, "git+https://github.com/Papilio-Labs/platform-gowin.git#v1.2.0"
+        )
+        self.assertEqual(
+            uploader.uri, PackageSpec(config.get("env:fpga", "platform")).uri
         )
 
 

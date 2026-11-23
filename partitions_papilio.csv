@@ -1,0 +1,8 @@
+# Resident Papilio ESP loader layout; normal uploads write OTA applications only.
+# Name, Type, SubType, Offset, Size
+nvs_loader, data, nvs, 0x9000, 0x3000
+otadata, data, ota, 0xC000, 0x2000
+nvs, data, nvs, 0xE000, 0x6000
+factory, app, factory, 0x20000, 0xE0000
+ota_0, app, ota_0, 0x100000, 0x180000
+ota_1, app, ota_1, 0x280000, 0x180000

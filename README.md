@@ -60,11 +60,80 @@ Then run `pio run` for both targets, or `pio run -e fpga` and
    }
    ```
 
-5. Build both targets. On a RetroCade with the resident Papilio ESP Bootloader,
-   use [Papilio Loader](https://papilioworks.com/loader/) to load the FPGA
-   bitstream (`.pio/build/fpga/fpga_bitstream.bin`) and then the ESP32 app
-   (`.pio/build/esp32/firmware.bin`) without replacing the factory loader or
-   partition table.
+5. Build and upload FPGA first, then the ESP32 application, using the
+   instructions below. The example sets steady red, not a cycling pattern.
+
+## Upload through the on-board loader
+
+The board must already contain the resident Papilio ESP bootloader and its
+factory/OTA partition layout. Normal uploads do not install or replace that
+loader. No desktop Papilio Loader, MCP, Node.js, or globally installed
+flashing tools are required.
+
+### USB serial (default)
+
+```bash
+pio run -e fpga -t upload
+pio run -e esp32 -t upload
+```
+
+Set `upload_port` in each environment if automatic detection is ambiguous,
+or pass `--upload-port` on the CLI. Close serial monitors first.
+
+FPGA uses `papilio_serial`; ESP uses PlatformIO's `custom` protocol with
+`custom_papilio_transport = serial`. The ESP
+[upload hook](./scripts/papilio_upload.py) runs the same managed uploader
+as the FPGA platform, installed through `platform_packages`.
+
+The uploader verifies board layout and factory identity, backs up OTA
+selection records under `.pio/build/<environment>/papilio-backups/`, clears
+only those records if factory entry is needed, then resets into the loader.
+This intentionally clears the old OTA selection/rollback history, not the
+factory firmware, partition table, loader WiFi settings, or app images.
+The loader remembers its last application slot separately.
+
+The FPGA loader installs its flash bridge itself and programs external FPGA
+flash at `0x0`. The ESP application is uploaded to the loader-selected OTA
+slot, never to ESP flash at `0x0`. The
+[partition configuration](./partitions_papilio.csv) provides two 1.5 MB
+application slots. `board_build.app_partition_name = ota_0` supplies the
+build size limit; it does not force the runtime upload slot.
+
+For consecutive FPGA/ESP uploads, optionally set
+`custom_papilio_stay_in_loader = yes` in the FPGA environment to avoid
+resuming the app between uploads. Standalone FPGA uploads resume by default.
+
+### Network HTTP
+
+Change these settings in [platformio.ini](./platformio.ini):
+
+```ini
+[env:esp32]
+; Keep upload_protocol = custom and the existing package/hook declarations.
+custom_papilio_transport = ota
+custom_papilio_host = 192.168.1.100
+
+[env:fpga]
+upload_protocol = papilio_ota
+custom_papilio_host = 192.168.1.100
+custom_papilio_stay_in_loader = yes
+```
+
+Use your board's IP/hostname; port 3232 is the default. Run the same upload
+commands as above. FPGA uses `/fpga-update`; ESP uses `/update` after showing
+the selected target. Both use positive loader identity checks.
+
+If the loader is already running, HTTP uploads need no USB. Compatible
+FPGA-Companion apps can hand off through `/goto-loader`. The template app
+has no such network service, so set `custom_papilio_enter_via_usb = yes`
+for the first upload if it needs USB-assisted factory entry. Specify
+`custom_papilio_usb_port` if necessary. Do not set that option for a
+network-only board; manually enter its factory loader instead.
+
+The uploader fails on protocol errors, missing acknowledgements, and HTTP
+errors; it does not blindly retry a partially written image. If USB reset
+wedges, follow its RESET/BOOT guidance. Windows hardware tests passed for
+both transports; Linux/macOS hardware tests remain pending.
 
 ## Slot addresses
 
